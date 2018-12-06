@@ -1861,6 +1861,44 @@ const char *getuname()
     return (ret);
 }
 
+// Move to the directory where this executable lives in
+
+void w_ch_exec_dir() {
+    TCHAR path[2048] = { 0 };
+    DWORD last_error;
+    int ret;
+
+    /* Get full path to the directory this executable lives in */
+    ret = GetModuleFileName(NULL, path, sizeof(path));
+
+    /* Check for errors */
+    if (!ret) {
+        print_out(GMF_ERROR);
+
+        /* Get last error */
+        last_error = GetLastError();
+
+        /* Look for errors */
+        switch (last_error) {
+        case ERROR_INSUFFICIENT_BUFFER:
+            print_out(GMF_BUFF_ERROR, ret, sizeof(path));
+            break;
+        default:
+            print_out(GMF_UNKN_ERROR, last_error);
+        }
+
+        exit(EXIT_FAILURE);
+    }
+
+    /* Remove file name from path */
+    PathRemoveFileSpec(path);
+
+    /* Move to correct directory */
+    if (chdir(path)) {
+        print_out(CHDIR_ERROR, path, errno, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+}
 
 #endif /* WIN32 */
 
@@ -2077,7 +2115,7 @@ int w_copy_file(const char *src, const char *dst,char mode,char * message) {
     else {
         fp_dst = fopen(dst, "w");
     }
-    
+
 
     if (!fp_dst) {
         merror("At w_copy_file(): Couldn't open file '%s'", dst);
@@ -2362,7 +2400,7 @@ char ** wreaddir(const char * name) {
 
         files = realloc(files, (i + 2) * sizeof(char *));
         if(!files){
-           merror_exit(MEM_ERROR, errno, strerror(errno)); 
+           merror_exit(MEM_ERROR, errno, strerror(errno));
         }
         files[i++] = strdup(dirent->d_name);
     }
@@ -2474,7 +2512,7 @@ int w_remove_line_from_file(char *file,int line){
 
         if(i != line){
             count_w = fwrite(buffer, 1, strlen(buffer) , fp_dst);
-           
+
             if (count_w != strlen(buffer) || ferror(fp_dst)) {
                 merror("At remove_line_from_file(): Couldn't write file '%s'", destination);
                 break;

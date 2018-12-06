@@ -50,6 +50,9 @@
 #define WD_IGNORE_REST      0x0000008
 #endif
 
+#define SK_CONF_UNPARSED -2
+#define SK_CONF_UNDEFINED -1
+
 //Max allowed value for recursion
 #define MAX_DEPTH_ALLOWED 320
 
@@ -81,6 +84,7 @@ typedef struct whodata_evt {
     char *audit_name;  // Linux
     char *effective_uid;  // Linux
     char *effective_name;  // Linux
+    char *inode;  // Linux
     int ppid;  // Linux
 #ifndef WIN32
     unsigned int process_id;
@@ -208,9 +212,12 @@ typedef struct _config {
     int max_audit_entries;          /* Maximum entries for Audit (whodata) */
 #endif
 
+    char **audit_key;                // Listen audit keys
+
     OSHash *fp;
     OSHash *last_check;
     OSHash *local_hash;
+    OSHash *inode_hash;
 
     rtfim *realtime;
 
@@ -225,6 +232,7 @@ char *syscheck_opts2str(char *buf, int buflen, int opts);
 
 /* Frees the Syscheck struct  */
 void Free_Syscheck(syscheck_config * config);
+char* check_ascci_hex (char *input);
 
 void log_realtime_status(int);
 
