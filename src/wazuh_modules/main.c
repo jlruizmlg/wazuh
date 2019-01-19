@@ -1,6 +1,6 @@
 /*
  * Wazuh Module Manager
- * Copyright (C) 2016 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * April 22, 2016.
  *
  * This program is a free software; you can redistribute it
@@ -175,6 +175,9 @@ void wm_setup()
         sigaction(SIGHUP, &action, NULL);
         sigaction(SIGINT, &action, NULL);
     }
+
+    action.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &action, NULL);
 
     // Create PID file
 

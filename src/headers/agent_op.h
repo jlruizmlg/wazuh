@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -70,5 +71,17 @@ int w_validate_group_name(const char *group);
 int set_agent_multigroup(char * group);
 
 void w_remove_multigroup(const char *group);
+
+// Connect to Agentd. Returns socket or -1 on error.
+int auth_connect();
+
+// Close socket if valid.
+int auth_close(int sock);
+
+// Add agent. Returns 0 on success or -1 on error.
+int auth_add_agent(int sock, char *id, const char *name, const char *ip, const char *key, int force, int json_format,const char *agent_id,int exit_on_error);
+
+// Get the agent id
+char * get_agent_id_from_name(const char *agent_name);
 
 #endif /* __AGENT_OP_H */

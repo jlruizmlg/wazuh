@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -573,6 +574,8 @@ void Zero_Eventinfo(Eventinfo *lf)
     lf->filename = NULL;
     lf->perm_before = 0;
     lf->perm_after = 0;
+    lf->win_perm_before = NULL;
+    lf->win_perm_after = NULL;
     lf->md5_before = NULL;
     lf->md5_after = NULL;
     lf->sha1_before = NULL;
@@ -632,7 +635,7 @@ void Free_Eventinfo(Eventinfo *lf)
         EventNode *prev = lf->node->prev;
         w_mutex_lock(&prev->mutex);
         prev->next = NULL;
-        while (lf->node->count > 0);
+        while (lf->node->count > 0) {}
         w_mutex_unlock(&prev->mutex);
     }
 
@@ -777,6 +780,12 @@ void Free_Eventinfo(Eventinfo *lf)
     }
     if (lf->sk_tag) {
         free(lf->sk_tag);
+    }
+    if (lf->win_perm_before) {
+        free(lf->win_perm_before);
+    }
+    if (lf->win_perm_after) {
+        free(lf->win_perm_after);
     }
     if (lf->md5_before) {
         free(lf->md5_before);
@@ -1130,6 +1139,14 @@ void w_copy_event_for_log(Eventinfo *lf,Eventinfo *lf_cpy){
         os_strdup(lf->sk_tag, lf_cpy->sk_tag);
     }
 
+    if (lf->win_perm_before) {
+        os_strdup(lf->win_perm_before, lf_cpy->win_perm_before);
+    }
+
+    if (lf->win_perm_after) {
+        os_strdup(lf->win_perm_after, lf_cpy->win_perm_after);
+    }
+
     if(lf->md5_before){
         os_strdup(lf->md5_before,lf_cpy->md5_before);
     }
@@ -1153,6 +1170,9 @@ void w_copy_event_for_log(Eventinfo *lf,Eventinfo *lf_cpy){
     if(lf->sha256_after){
         os_strdup(lf->sha256_after,lf_cpy->sha256_after);
     }
+
+    lf_cpy->attrs_before = lf->attrs_before;
+    lf_cpy->attrs_after = lf->attrs_after;
 
     if(lf->size_before){
         os_strdup(lf->size_before,lf_cpy->size_before);

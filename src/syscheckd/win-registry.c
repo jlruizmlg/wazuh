@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -301,7 +302,7 @@ void os_winreg_querykey(HKEY hKey, char *p_key, char *full_key_name, int arch, c
         /* Look for p_key on the reg db */
         if (os_winreg_changed(full_key_name, mf_sum, sf_sum, arch)) {
             char reg_changed[MAX_LINE + 1];
-            snprintf(reg_changed, MAX_LINE, "::::%s:%s:::::!:::::::::::%s %s%s",
+            snprintf(reg_changed, MAX_LINE, "::::%s:%s::::::!:::::::::::%s %s%s",
                      mf_sum, sf_sum, tag ? tag : "", arch == ARCH_64BIT ? "[x64] " : "", full_key_name);
 
             /* Notify server */

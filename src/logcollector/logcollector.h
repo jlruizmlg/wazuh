@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -108,9 +109,6 @@ extern logsocket *logsk;
 extern int vcheck_files;
 extern int maximum_lines;
 extern logsocket default_agent;
-extern int maximum_files;
-extern int current_files;
-extern int total_files;
 extern int force_reload;
 extern int reload_interval;
 extern int reload_delay;

@@ -1,4 +1,6 @@
 #!/bin/sh
+
+# Copyright (C) 2015-2019, Wazuh Inc.
 # Shell script update functions for the OSSEC HIDS
 # Author: Daniel B. Cid <daniel.cid@gmail.com>
 
@@ -49,20 +51,7 @@ getPreinstalled()
 {
     . ${OSSEC_INIT}
 
-    # agent
-    cat $DIRECTORY/etc/ossec.conf | grep "<client>" > /dev/null 2>&1
-    if [ $? = 0 ]; then
-        echo "agent"
-        return 0;
-    fi
-
-    cat $DIRECTORY/etc/ossec.conf | grep "<remote>" > /dev/null 2>&1
-    if [ $? = 0 ]; then
-        echo "server"
-        return 0;
-    fi
-
-    echo "local"
+	echo $TYPE
     return 0;
 }
 

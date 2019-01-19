@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -11,6 +12,7 @@
  * Monitor some files and forward the output to our analysis system
  */
 
+#include "shared.h"
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdio.h>
@@ -26,7 +28,6 @@
 static void help_logcollector(void) __attribute__((noreturn));
 
 int lc_debug_level;
-rlim_t nofile;
 
 /* Print help statement */
 static void help_logcollector()

@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -54,7 +55,7 @@ int delete_agentinfo(const char *id, const char *name) __attribute__((nonnull));
 void delete_sqlite(const char *id, const char *name);
 
 /* Get all available agents */
-char **get_agents(int flag);
+char **get_agents(int flag, int mon_time);
 
 /* Free the agent list */
 void free_agents(char **agent_list);

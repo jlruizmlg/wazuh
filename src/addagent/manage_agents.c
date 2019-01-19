@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -221,9 +222,6 @@ int add_agent(int json_output, int no_limit)
             double antiquity = OS_AgentAntiquity_ID(id_exist);
 
             if (env_remove_dup && (antiquity >= force_antiquity || antiquity < 0)) {
-#ifdef REUSE_ID
-                strncpy(id, id_exist, FILE_SIZE);
-#endif
                 OS_BackupAgentInfo_ID(id_exist);
                 OS_RemoveAgent(id_exist);
             } else {
@@ -381,7 +379,7 @@ int add_agent(int json_output, int no_limit)
                     } else
                         merror_exit("Lost authd socket connection.");
                 }
-                if (auth_add_agent(sock, id, name, ip, env_remove_dup ? force_antiquity : -1, json_output) < 0) {
+                if (auth_add_agent(sock, id, name, ip, NULL, env_remove_dup ? force_antiquity : -1, json_output,NULL,1) < 0) {
                     break;
                 }
             }

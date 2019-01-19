@@ -1,6 +1,6 @@
 /*
  * JSON support library
- * Copyright (C) 2018 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * May 11, 2018.
  *
  * This program is a free software; you can redistribute it
@@ -11,7 +11,7 @@
 
 #include <shared.h>
 
-cJSON * json_fread(const char * path) {
+cJSON * json_fread(const char * path, char retry) {
     FILE * fp = NULL;
     cJSON * item = NULL;
     char * buffer = NULL;
@@ -51,11 +51,13 @@ cJSON * json_fread(const char * path) {
     buffer[size] = '\0';
 
     if (item = cJSON_Parse(buffer), !item) {
-        mdebug1("Couldn't parse JSON file '%s'. Trying to clear comments.", path);
-        json_strip(buffer);
+        if (retry) {
+            mdebug1("Couldn't parse JSON file '%s'. Trying to clear comments.", path);
+            json_strip(buffer);
 
-        if (item = cJSON_Parse(buffer), !item) {
-            mdebug1("Couldn't parse JSON file '%s'.", path);
+            if (item = cJSON_Parse(buffer), !item) {
+                mdebug1("Couldn't parse JSON file '%s'.", path);
+            }
         }
     }
 

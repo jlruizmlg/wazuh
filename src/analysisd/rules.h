@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -248,6 +249,7 @@ int _setlevels(RuleNode *node, int nnode);
 #define SYSCHECK_DEL        "syscheck_deleted"
 #define SYSCOLLECTOR_MOD    "syscollector"
 #define CISCAT_MOD          "ciscat"
+#define WINEVT_MOD          "windows_eventchannel"
 
 /* Global variables */
 extern int _max_freq;

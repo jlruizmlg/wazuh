@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -143,9 +144,6 @@ extern int interval;
 extern int remote_conf;
 extern int min_eps;
 
-extern unsigned int _s_comp_print;
-extern unsigned int _s_recv_flush;
-extern int _s_verify_counter;
 
 /* Global variables. Only modified during startup. */
 

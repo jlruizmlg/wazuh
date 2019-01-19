@@ -1,4 +1,5 @@
-/* Copyright (C) 2010 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2010 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -366,6 +367,11 @@ int main(int argc, char **argv)
         }
     }
 
+    if (w_is_worker()) {
+        minfo("Cluster worker node: Disabling Authd daemon.");
+        exit(0);
+    }
+
     /* Start daemon -- NB: need to double fork and setsid */
     mdebug1(STARTED_MSG);
 
@@ -647,7 +653,7 @@ void* run_dispatcher(__attribute__((unused)) void *arg) {
 
         if (config.flags.verify_host && config.agent_ca) {
             if (check_x509_cert(ssl, srcip) != VERIFY_TRUE) {
-                merror("Unable to verify server certificate.");
+                merror("Unable to verify client certificate.");
                 SSL_free(ssl);
                 close(client.socket);
                 continue;

@@ -1,6 +1,6 @@
 /*
  * Wazuh Module for SQLite database syncing
- * Copyright (C) 2016 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * November 29, 2016
  *
  * This program is a free software; you can redistribute it
@@ -116,6 +116,12 @@ void* wm_database_main(wm_database *data) {
     module = data;
 
     mtinfo(WM_DATABASE_LOGTAG, "Module started.");
+
+    // Reset template. Basically, remove queue/db/.template.db
+    char path_template[PATH_MAX + 1];
+    snprintf(path_template, sizeof(path_template), "%s/%s/%s", DEFAULTDIR, WDB_DIR, WDB_PROF_NAME);
+    unlink(path_template);
+    mdebug1("Template db file removed: %s", path_template);
 
     // Manager name synchronization
     if (data->sync_agents) {
@@ -375,7 +381,7 @@ void wm_sync_agents() {
             *group = 0;
         }
 
-        if (!(wdb_insert_agent(id, entry->name, OS_CIDRtoStr(entry->ip, cidr, 20) ? entry->ip->ip : cidr, entry->key, *group ? group : NULL) || module->full_sync)) {
+        if (!(wdb_insert_agent(id, entry->name, OS_CIDRtoStr(entry->ip, cidr, 20) ? entry->ip->ip : cidr, entry->key, *group ? group : NULL,1) || module->full_sync)) {
 
             // Find files
 
@@ -524,6 +530,8 @@ int wm_sync_agentinfo(int id_agent, const char *path) {
     clock_t clock0 = clock();
     regmatch_t match[2];
     int match_size;
+
+    strncpy(node_name, "unknown", sizeof(node_name) - 1);
 
     if (!(fp = fopen(path, "r"))) {
         mterror(WM_DATABASE_LOGTAG, FOPEN_ERROR, path, errno, strerror(errno));
@@ -759,6 +767,7 @@ int wm_sync_file(const char *dirname, const char *fname) {
     char name[FILE_SIZE];
     char addr[FILE_SIZE];
     char path[PATH_MAX] = "";
+    char del_path[PATH_MAX] = "";
     struct stat buffer;
     long offset;
     int result = 0;
@@ -810,6 +819,8 @@ int wm_sync_file(const char *dirname, const char *fname) {
         }
 
         if (wdb_get_agent_status(id_agent) < 0) {
+            snprintf(del_path, PATH_MAX - 1, DEFAULTDIR GROUPS_DIR "/%03d", id_agent);
+            unlink(del_path);
             wdb_delete_agent_belongs(id_agent);
             return -1;
         }
@@ -828,6 +839,8 @@ int wm_sync_file(const char *dirname, const char *fname) {
             case 0:
                 if ((id_agent = wdb_find_agent(name, addr)) < 0) {
                     mtdebug1(WM_DATABASE_LOGTAG, "No such agent at database for file %s/%s", dirname, fname);
+                    snprintf(del_path, PATH_MAX, "%s/%s", dirname, fname);
+                    unlink(del_path);
                     return -1;
                 }
 

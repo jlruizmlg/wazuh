@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -31,10 +32,7 @@ logreader_glob *globs;
 logsocket *logsk;
 int vcheck_files;
 int maximum_lines;
-int maximum_files;
 int sample_log_length;
-int current_files = 0;
-int total_files = 0;
 int force_reload;
 int reload_interval;
 int reload_delay;
@@ -47,12 +45,12 @@ logsocket default_agent = { .name = "agent" };
 /* Output thread variables */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #ifdef WIN32
-static pthread_mutex_t win_el_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t win_el_mutex;
+static pthread_mutexattr_t win_el_mutex_attr;
 #endif
 
 /* Multiple readers / one write mutex */
 static pthread_rwlock_t files_update_rwlock;
-
 
 static char *rand_keepalive_str(char *dst, int size)
 {
@@ -84,8 +82,11 @@ void LogCollectorStart()
     char keepalive[1024];
     logreader *current;
 
+    total_files = 0;
+    current_files = 0;
+
     set_sockets();
-    pthread_rwlock_init(&files_update_rwlock, NULL);
+    w_rwlock_init(&files_update_rwlock, NULL);
 
 #ifndef WIN32
     /* To check for inode changes */
@@ -98,14 +99,24 @@ void LogCollectorStart()
 #else
     BY_HANDLE_FILE_INFORMATION lpFileInformation;
     int r;
+    const char *m_uname;
+
+    m_uname = getuname();
 
     /* Check if we are on Windows Vista */
-    checkVista();
+    if (!checkVista()) {
+        minfo("Windows version is older than 6.0. (%s).", m_uname);
+    } else {
+        minfo("Windows version is 6.0 or newer. (%s).", m_uname);
+    }
 
     /* Read vista descriptions */
     if (isVista) {
         win_read_vista_sec();
     }
+
+    w_mutexattr_init(&win_el_mutex_attr);
+    w_mutexattr_settype(&win_el_mutex_attr, PTHREAD_MUTEX_ERRORCHECK);
 #endif
 
     mdebug1("Entering LogCollectorStart().");
@@ -134,6 +145,8 @@ void LogCollectorStart()
             minfo(READING_EVTLOG, current->file);
             win_startel(current->file);
 
+            /* Mutexes are not previously initialized under Windows*/
+            w_mutex_init(&current->mutex, &win_el_mutex_attr);
 #endif
             current->file = NULL;
             current->command = NULL;
@@ -145,20 +158,22 @@ void LogCollectorStart()
             minfo(READING_EVTLOG, current->file);
             win_start_event_channel(current->file, current->future, current->query);
 #else
-            mwarn("eventchannel not available on this version of OSSEC");
+            mwarn("eventchannel not available on this version of Windows");
 #endif
 
+            /* Mutexes are not previously initialized under Windows*/
+            w_mutex_init(&current->mutex, &win_el_mutex_attr);
 #endif
-            current->file = NULL;
-            current->command = NULL;
-            current->fp = NULL;
-        }
 
-        else if (strcmp(current->logformat, "command") == 0) {
+        } else if (strcmp(current->logformat, "command") == 0) {
             current->file = NULL;
             current->fp = NULL;
             current->size = 0;
 
+#ifdef WIN32
+            /* Mutexes are not previously initialized under Windows*/
+            w_mutex_init(&current->mutex, &win_el_mutex_attr);
+#endif
             if (current->command) {
                 current->read = read_command;
 
@@ -181,6 +196,12 @@ void LogCollectorStart()
             current->file = NULL;
             current->fp = NULL;
             current->size = 0;
+
+#ifdef WIN32
+            /* Mutexes are not previously initialized under Windows*/
+            w_mutex_init(&current->mutex, &win_el_mutex_attr);
+#endif
+
             if (current->command) {
                 current->read = read_fullcommand;
 
@@ -211,6 +232,9 @@ void LogCollectorStart()
             if (current->fp) {
                 current->read(current, &r, 1);
             }
+
+            /* Mutexes are not previously initialized under Windows*/
+            w_mutex_init(&current->mutex, &win_el_mutex_attr);
 #endif
         }
 
@@ -506,7 +530,12 @@ void LogCollectorStart()
                         continue;
                     }
 
-                    minfo(LOGC_FILE_ERROR, current->file);
+                    if(!strcmp(current->logformat, "eventchannel")){
+                        mdebug1(LOGC_FILE_ERROR, current->file);
+                    } else {
+                        minfo(LOGC_FILE_ERROR, current->file);
+                    }
+
                     if (current->fp) {
                         fclose(current->fp);
 #ifdef WIN32
@@ -663,7 +692,7 @@ int handle_file(int i, int j, int do_fseek, int do_log)
         }
         goto error;
     }
-    fd = _open_osfhandle((long)lf->h, 0);
+    fd = _open_osfhandle((intptr_t)lf->h, 0);
     if (fd == -1) {
         merror(FOPEN_ERROR, lf->file, errno, strerror(errno));
         CloseHandle(lf->h);
@@ -742,7 +771,7 @@ int reload_file(logreader * lf) {
         return (-1);
     }
 
-    fd = _open_osfhandle((long)lf->h, 0);
+    fd = _open_osfhandle((intptr_t)lf->h, 0);
 
     if (fd == -1) {
         CloseHandle(lf->h);
@@ -914,6 +943,10 @@ int check_pattern_expand(int do_seek) {
     int i, j;
     int retval = 0;
 
+    pthread_mutexattr_t attr;
+    w_mutexattr_init(&attr);
+    w_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+
     if (globs) {
         for (j = 0; globs[j].gpath; j++) {
             if (current_files >= maximum_files) {
@@ -948,7 +981,7 @@ int check_pattern_expand(int do_seek) {
                         memcpy(&globs[j].gfiles[i], globs[j].gfiles, sizeof(logreader));
                     }
                     os_strdup(g.gl_pathv[glob_offset], globs[j].gfiles[i].file);
-                    globs[j].gfiles[i].mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+                    w_mutex_init(&globs[j].gfiles[i].mutex, &attr);
                     globs[j].gfiles[i].fp = NULL;
                     globs[j].gfiles[i].exists = 1;
                     globs[j].gfiles[i + 1].file = NULL;
@@ -966,6 +999,8 @@ int check_pattern_expand(int do_seek) {
             globfree(&g);
         }
     }
+
+    w_mutexattr_destroy(&attr);
 
     return retval;
 }
@@ -1096,6 +1131,10 @@ void w_set_file_mutexes(){
     IT_control f_control;
     int r,k;
 
+    pthread_mutexattr_t attr;
+    w_mutexattr_init(&attr);
+    w_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+
     for (r = 0, k = -1;; r++) {
         if (f_control = update_current(&current, &r, &k), f_control) {
             if (f_control == NEXT_IT) {
@@ -1104,8 +1143,18 @@ void w_set_file_mutexes(){
                 break;
             }
         }
-        current->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+
+        if (k < 0) {
+            w_mutex_init(&current->mutex, &attr);
+        }
     }
+
+    w_mutexattr_destroy(&attr);
+}
+
+void free_msg_queue(w_msg_queue_t *msg) {
+    if (msg->msg_queue) queue_free(msg->msg_queue);
+    free(msg);
 }
 
 void w_msg_hash_queues_init(){
@@ -1116,19 +1165,23 @@ void w_msg_hash_queues_init(){
     if(!msg_queues_table){
         merror_exit("Failed to create hash table for queue threads");
     }
+
+    OSHash_SetFreeDataPointer(msg_queues_table, (void (*)(void *))free_msg_queue);
 }
 
 int w_msg_hash_queues_add_entry(const char *key){
     int result;
     w_msg_queue_t *msg;
 
-    os_calloc(1,sizeof(w_msg_queue_t),msg);
+    os_calloc(1,sizeof(w_msg_queue_t), msg);
     msg->msg_queue = queue_init(OUTPUT_QUEUE_SIZE);
-    msg->mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-    msg->available = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+    w_mutex_init(&msg->mutex, NULL);
+    w_cond_init(&msg->available, NULL);
 
     if (result = OSHash_Add(msg_queues_table, key, msg), result != 2) {
         queue_free(msg->msg_queue);
+        w_mutex_destroy(&msg->mutex);
+        w_cond_destroy(&msg->available);
         free(msg);
     }
 
@@ -1310,7 +1363,7 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
 
         if (pthread_mutex_trylock(&win_el_mutex) == 0) {
             win_readel();
-            pthread_mutex_unlock(&win_el_mutex);
+            w_mutex_unlock(&win_el_mutex);
         }
 #endif
 
@@ -1319,11 +1372,11 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
 
             w_rwlock_rdlock(&files_update_rwlock);
             if (f_control = update_current(&current, &i, &j), f_control) {
+                w_rwlock_unlock(&files_update_rwlock);
+
                 if (f_control == NEXT_IT) {
-                    w_rwlock_unlock(&files_update_rwlock);
                     continue;
                 } else {
-                    w_rwlock_unlock(&files_update_rwlock);
                     break;
                 }
             }
@@ -1339,10 +1392,11 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
                             current->read(current, &r, 0);
                         }
                     }
-                    pthread_mutex_unlock (&current->mutex);
+                    w_mutex_unlock(&current->mutex);
                     w_rwlock_unlock(&files_update_rwlock);
                     continue;
                 }
+
                 /* Windows with IIS logs is very strange.
                 * For some reason it always returns 0 (not EOF)
                 * the fgetc. To solve this problem, we always
@@ -1354,7 +1408,7 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
                 */
                 if ((r = fgetc(current->fp)) == EOF) {
                     clearerr(current->fp);
-                    pthread_mutex_unlock (&current->mutex);
+                    w_mutex_unlock(&current->mutex);
                     w_rwlock_unlock(&files_update_rwlock);
                     continue;
                 }
@@ -1381,7 +1435,7 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
                         }
 
                     }
-                    pthread_mutex_unlock (&current->mutex);
+                    w_mutex_unlock(&current->mutex);
                 }
                 /* If ferror is set */
                 else {
@@ -1406,7 +1460,7 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
 
                         /* Try to open it again */
                         if (handle_file(i, j, 0, 1)) {
-                            pthread_mutex_unlock (&current->mutex);
+                            w_mutex_unlock(&current->mutex);
                             w_rwlock_unlock(&files_update_rwlock);
                             continue;
                         }
@@ -1424,7 +1478,7 @@ void * w_input_thread(__attribute__((unused)) void * t_id){
                     }
 
                     clearerr(current->fp);
-                    pthread_mutex_unlock (&current->mutex);
+                    w_mutex_unlock(&current->mutex);
                 }
             }
 
@@ -1440,7 +1494,12 @@ void w_create_input_threads(){
 
     N_INPUT_THREADS = getDefine_Int("logcollector", "input_threads", N_MIN_INPUT_THREADS, 128);
 
-    for(i = 0;i < N_INPUT_THREADS;i++){
+#ifdef WIN32
+    w_mutex_init(&win_el_mutex, &win_el_mutex_attr);
+    w_mutexattr_destroy(&win_el_mutex_attr);
+#endif
+
+    for(i = 0; i < N_INPUT_THREADS; i++) {
 #ifndef WIN32
         w_create_thread(w_input_thread,NULL);
 #else

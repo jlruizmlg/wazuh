@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -22,9 +23,6 @@ int remote_conf;
 int min_eps;
 int rotate_log;
 int agent_debug_level;
-unsigned int _s_comp_print;
-unsigned int _s_recv_flush;
-int _s_verify_counter;
 
 /* Read the config file (for the remote client) */
 int ClientConf(const char *cfgfile)

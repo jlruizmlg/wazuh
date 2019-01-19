@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -11,6 +12,11 @@
 #define __MEM_H
 
 #include <stdlib.h>
+
+#ifdef WIN32
+#define win_alloc(x) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (x))
+#define win_free(x) HeapFree(GetProcessHeap(), 0, (x))
+#endif
 
 #define w_FreeArray(x) if (x) {char **x_it = x; for (; *x_it; (x_it)++) {free(*x_it); *x_it = NULL;}}
 void **os_AddPtArray(void *pt, void **array);

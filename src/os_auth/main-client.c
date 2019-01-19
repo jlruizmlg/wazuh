@@ -1,4 +1,5 @@
-/* Copyright (C) 2010 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2010 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -355,7 +356,7 @@ int main(int argc, char **argv)
     if (ca_cert) {
         printf("INFO: Verifying manager's certificate\n");
         if (check_x509_cert(ssl, manager) != VERIFY_TRUE) {
-            mdebug1("Unable to verify server certificate.");
+            merror("Unable to verify server certificate.");
             free(buf);
             exit(1);
         }

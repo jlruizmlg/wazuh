@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -70,6 +71,13 @@ typedef struct _keystore {
     size_t removed_keys_size;
 } keystore;
 
+typedef enum key_states {
+    KS_VALID,
+    KS_RIDS,
+    KS_CORRUPT,
+    KS_ENCKEY
+} key_states;
+
 #define KEYSTORE_INITIALIZER { NULL, NULL, NULL, NULL, 0, 0, 0, 0, { 0, 0 }, NULL, 0 }
 
 /** Function prototypes -- key management **/
@@ -133,7 +141,7 @@ int OS_IsAllowedDynamicID(keystore *keys, const char *id, const char *srcip) __a
 /** Function prototypes -- send/recv messages **/
 
 /* Decrypt and decompress a remote message */
-char *ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip) __attribute((nonnull));
+int ReadSecMSG(keystore *keys, char *buffer, char *cleartext, int id, unsigned int buffer_size, size_t *final_size, const char *ip, char **output) __attribute((nonnull));
 
 /* Create an OSSEC message (encrypt and compress) */
 size_t CreateSecMSG(const keystore *keys, const char *msg, size_t msg_length, char *msg_encrypted, unsigned int id) __attribute((nonnull));

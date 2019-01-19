@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2015-2019, Wazuh Inc.
 # Created by Wazuh, Inc. <info@wazuh.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
@@ -128,7 +129,7 @@ def get_netaddr_agent(agent_id, offset=0, limit=common.database_limit, select={}
     """
     Get info about an agent's network address
     """
-    valid_select_fields = {'scan_id', 'proto', 'address',
+    valid_select_fields = {'scan_id', 'iface', 'proto', 'address',
                            'netmask', 'broadcast'}
 
     return get_item_agent(agent_id=agent_id, offset=offset, limit=limit, select=select,

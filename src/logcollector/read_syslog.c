@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -29,8 +30,8 @@ void *read_syslog(logreader *lf, int *rc, int drop_it) {
     /* Get initial file location */
     fgetpos(lf->fp, &fp_pos);
 
-    for (offset = ftell(lf->fp); fgets(str, OS_MAXSTR - OS_LOG_HEADER, lf->fp) != NULL && (!maximum_lines || lines < maximum_lines); offset += rbytes) {
-        rbytes = ftell(lf->fp) - offset;
+    for (offset = w_ftell(lf->fp); fgets(str, OS_MAXSTR - OS_LOG_HEADER, lf->fp) != NULL && (!maximum_lines || lines < maximum_lines); offset += rbytes) {
+        rbytes = w_ftell(lf->fp) - offset;
         lines++;
 
         /* Get the last occurrence of \n */
@@ -50,6 +51,7 @@ void *read_syslog(logreader *lf, int *rc, int drop_it) {
         else if (rbytes == OS_MAXSTR - OS_LOG_HEADER - 1) {
             /* Message size > maximum allowed */
             __ms = 1;
+            str[rbytes - 1] = '\0';
         } else {
             /* We may not have gotten a line feed
              * because we reached EOF.
@@ -101,7 +103,7 @@ void *read_syslog(logreader *lf, int *rc, int drop_it) {
             }
 
             for (offset += rbytes; fgets(str, OS_MAXSTR - 2, lf->fp) != NULL; offset += rbytes) {
-                rbytes = ftell(lf->fp) - offset;
+                rbytes = w_ftell(lf->fp) - offset;
 
                 /* Get the last occurrence of \n */
                 if (str[rbytes - 1] == '\n') {

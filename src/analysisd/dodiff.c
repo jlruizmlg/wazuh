@@ -1,4 +1,5 @@
-/* Copyright (C) 2010 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2010 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -69,11 +70,11 @@ int doDiff(RuleInfo *rule, Eventinfo *lf)
     time_t date_of_change;
     char *htpt = NULL;
     char flastfile[OS_SIZE_2048 + 1];
-    char flastcontent[OS_SIZE_8192 + 1];
+    char flastcontent[OS_SIZE_65536 + 1];
 
     /* Clean up global */
     flastcontent[0] = '\0';
-    flastcontent[OS_SIZE_8192] = '\0';
+    flastcontent[OS_SIZE_65536] = '\0';
 
     if (lf->hostname[0] == '(') {
         htpt = strchr(lf->hostname, ')');
@@ -99,7 +100,7 @@ int doDiff(RuleInfo *rule, Eventinfo *lf)
     }
 
     /* lf->size can't be too long */
-    if (lf->size >= OS_SIZE_8192) {
+    if (lf->size >= OS_SIZE_65536) {
         merror("Event size (%zd) too long for diff.", lf->size);
         return (0);
     }
@@ -121,7 +122,7 @@ int doDiff(RuleInfo *rule, Eventinfo *lf)
             return (0);
         }
 
-        n = fread(flastcontent, 1, OS_SIZE_8192, fp);
+        n = fread(flastcontent, 1, OS_SIZE_65536, fp);
         if (n > 0) {
             flastcontent[n] = '\0';
         } else {

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2017 Wazuh Inc.
+* Copyright (C) 2015-2019, Wazuh Inc.
 * August 30, 2017.
 *
 * This program is a free software; you can redistribute it
@@ -345,6 +345,12 @@ int decode_netinfo(char *agent_id, cJSON * logJSON,int *socket) {
                             wm_strcat(&msg, "NULL", ' ');
                         }
 
+                        if (name) {
+                            wm_strcat(&msg, name->valuestring, '|');
+                        } else {
+                            wm_strcat(&msg, "NULL", '|');
+                        }
+
                         // Information about an IPv4 address
                         wm_strcat(&msg, "0", '|');
 
@@ -420,6 +426,12 @@ int decode_netinfo(char *agent_id, cJSON * logJSON,int *socket) {
                             wm_strcat(&msg, id, ' ');
                         } else {
                             wm_strcat(&msg, "NULL", ' ');
+                        }
+
+                        if (name) {
+                            wm_strcat(&msg, name->valuestring, '|');
+                        } else {
+                            wm_strcat(&msg, "NULL", '|');
                         }
 
                         // Information about an IPv6 address

@@ -1,6 +1,6 @@
 
 ' Script for configuration Windows agent.
-' Copyright (C) 2018 Wazuh, Inc <support@wazuh.com>
+' Copyright (C) 2015-2019, Wazuh Inc. <support@wazuh.com>
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -34,6 +34,12 @@ time_reconnect  = Replace(args(5), Chr(34), "")
 ' Only try to set the configuration if variables are setted
 
 Set objFSO = CreateObject("Scripting.FileSystemObject")
+
+' Create an empty client.keys file on first install
+If Not objFSO.fileExists(home_dir & "client.keys") Then
+    objFSO.CreateTextFile(home_dir & "client.keys")
+End If
+
 If objFSO.fileExists(home_dir & "ossec.conf") Then
     ' Reading ossec.conf file
     Const ForReading = 1

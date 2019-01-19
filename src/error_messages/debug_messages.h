@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * January 17, 2018.
  *
  * This program is a free software; you can redistribute it
@@ -51,5 +51,9 @@
 #define VU_AGENT_START        "(5486): Starting vulnerability assessment for agent %s."
 #define VU_AGENT_FINISH       "(5487): Finished vulnerability assessment for agent %s."
 #define VU_AG_NEVER_CON       "(5488): Agent '%s' never connected."
+#define VU_API_REQ_RETRY      "(5490): There was no valid response to '%s'. Retrying in %d seconds..."
+#define VU_UNEXP_JSON_KEY     "(5492): Unexpected JSON key: '%s'."
+#define VU_ENDING_UPDATE      "(5494): The update of the feeds ended successfully."
+#define VU_DOWNLOAD_FAIL      "(5495): The download can not be completed. Retrying in %d seconds."
 
 #endif

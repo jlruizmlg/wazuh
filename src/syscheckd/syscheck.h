@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -19,7 +20,8 @@
 #define NOTIFY_LIST_SIZE    32
 
 // Number of attributes in the hash table
-#define SK_DB_NATTR 10
+#define SK_DB_NATTR 11
+#define SK_DB_REPORT_CHANG 10
 
 #define WDATA_DEFAULT_INTERVAL_SCAN 300
 
@@ -49,7 +51,7 @@ int create_db(void);
 int run_dbcheck(void);
 
 /* Scan directory */
-int read_dir(const char *dir_name, int dir_position, whodata_evt *evt, int max_depth);
+int read_dir(const char *dir_name, int dir_position, whodata_evt *evt, int max_depth, __attribute__((unused))unsigned int is_link);
 
 /* Check the registry for changes */
 void os_winreg_check(void);
@@ -87,7 +89,10 @@ int realtime_checksumfile(const char *file_name, whodata_evt *evt) __attribute__
 int find_dir_pos(const char *filename, int full_compare, int check_find, int deep_search) __attribute__((nonnull(1)));
 
 #ifdef __linux__
+#define READING_MODE 0
+#define HEALTHCHECK_MODE 1
 int audit_init(void);
+void audit_read_events(int *audit_sock, int reading_mode);
 void audit_set_db_consistency(void);
 int check_auditd_enabled(void);
 int set_auditd_config(void);
@@ -96,7 +101,9 @@ int audit_add_rule(const char *path, const char *key);
 int audit_delete_rule(const char *path, const char *key);
 void *audit_main(int *audit_sock);
 void *audit_reload_thread(void);
+void *audit_healthcheck_thread(int *audit_sock);
 void audit_reload_rules(void);
+int audit_health_check(int audit_socket);
 void clean_rules(void);
 int filterkey_audit_events(char *buffer);
 int filterpath_audit_events(char *path);
@@ -106,6 +113,7 @@ extern volatile int whodata_alerts;
 extern volatile int audit_db_consistency_flag;
 extern pthread_mutex_t audit_mutex;
 extern pthread_cond_t audit_thread_started;
+extern pthread_cond_t audit_hc_started;
 extern pthread_cond_t audit_db_consistency;
 #elif WIN32
 int whodata_audit_start();
@@ -123,6 +131,8 @@ int fim_check_restrict(const char *file_name, OSMatch *restriction);
 #ifndef WIN32
 // Com request thread dispatcher
 void * syscom_main(void * arg);
+// Checking links to follow
+int read_links(const char *dir_name, int dir_position, int max_depth, unsigned int is_link);
 #endif
 size_t syscom_dispatch(char *command, char ** output);
 size_t syscom_getconfig(const char * section, char ** output);

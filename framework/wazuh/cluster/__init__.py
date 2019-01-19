@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2015-2019, Wazuh Inc.
 # Created by Wazuh, Inc. <info@wazuh.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
-__version__ = '3.7.2'
-__revision__ = '3727'
+__version__ = '3.8.0'
+__revision__ = '3805'
 __author__ = "Wazuh Inc"
 __ossec_name__ = "Wazuh"
 __licence__ = "\

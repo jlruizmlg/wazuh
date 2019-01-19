@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Wazuh Configuration & Init Files Generator
-# Copyright (C) 2016 Wazuh Inc.
+# Copyright (C) 2015-2019, Wazuh Inc.
 # November 24, 2016.
 #
 # This program is a free software; you can redistribute it
@@ -73,6 +73,7 @@ if [ "$1" = "conf" ]; then
   OPENSCAP="yes"
   SYSCOLLECTOR="yes"
   ACTIVERESPONSE="yes"
+  AUTHD="yes"
   SSL_CERT="yes"
   RLOG="no" # syslog
   SLOG="yes" # remote

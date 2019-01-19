@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -147,9 +148,7 @@ extern int request_timeout;
 extern int response_timeout;
 extern int INTERVAL;
 extern rlim_t nofile;
-extern unsigned int _s_comp_print;
-extern unsigned int _s_recv_flush;
-extern int _s_verify_counter;
 extern int guess_agent_group;
+extern int group_data_flush;
 
 #endif /* __LOGREMOTE_H */

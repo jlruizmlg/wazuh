@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -26,10 +27,8 @@ int request_timeout;
 int response_timeout;
 int INTERVAL;
 rlim_t nofile;
-unsigned int _s_comp_print;
-unsigned int _s_recv_flush;
-int _s_verify_counter;
 int guess_agent_group;
+int group_data_flush;
 
 /* Read the config file (the remote access) */
 int RemotedConfig(const char *cfgfile, remoted *cfg)
@@ -144,6 +143,7 @@ cJSON *getRemoteInternalConfig(void) {
     cJSON_AddNumberToObject(remoted,"rlimit_nofile",nofile);
     cJSON_AddNumberToObject(remoted,"merge_shared",logr.nocmerged);
     cJSON_AddNumberToObject(remoted,"guess_agent_group",guess_agent_group);
+    cJSON_AddNumberToObject(remoted,"group_data_flush",group_data_flush);
 
     cJSON_AddItemToObject(internals,"remoted",remoted);
     cJSON_AddItemToObject(root,"internal",internals);

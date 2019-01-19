@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -57,11 +58,13 @@ int Accumulate_Init()
     if (!acm_store) {
         merror(LIST_ERROR);
         return (0);
-    }
+    }    
     if (!OSHash_setSize(acm_store, 2048)) {
         merror(LIST_ERROR);
         return (0);
     }
+    
+    OSHash_SetFreeDataPointer(acm_store, (void (*)(void *))FreeACMStore);
 
     /* Default Expiry */
     gettimeofday(&tp, NULL);
@@ -198,12 +201,14 @@ Eventinfo *Accumulate(Eventinfo *lf)
     if ( do_update == 1 ) {
         /* Update the hash entry */
         if ( (result = OSHash_Update_ex(acm_store, _key, stored_data)) != 1) {
+            FreeACMStore(stored_data);
             merror("accumulator: ERROR: Update of stored data for %s failed (%d).", _key, result);
         } else {
             mdebug1("accumulator: DEBUG: Updated stored data for %s", _key);
         }
     } else {
         if ((result = OSHash_Add_ex(acm_store, _key, stored_data)) != 2 ) {
+            FreeACMStore(stored_data);
             merror("accumulator: ERROR: Addition of stored data for %s failed (%d).", _key, result);
         } else {
             mdebug1("accumulator: DEBUG: Added stored data for %s", _key);

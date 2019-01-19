@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All right reserved.
  *
  * This program is a free software; you can redistribute it
@@ -473,6 +474,13 @@ int Remove_Localfile(logreader **logf, int i, int gl, int fr) {
 
             (*logf)[size - 1].file = NULL;
             (*logf)[size - 1].fp = NULL;
+
+            if(!gl) {
+                (*logf)[size - 1].target = NULL;
+                (*logf)[size - 1].ffile = NULL;
+                (*logf)[size - 1].logformat = NULL;
+                (*logf)[size - 1].command = NULL;
+            }
 
             if (!size)
                 size = 1;

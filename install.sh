@@ -1,7 +1,7 @@
 #!/bin/sh
+# Copyright (C) 2015-2019, Wazuh Inc.
 # Installation script for the OSSEC
 # Author: Daniel B. Cid <daniel.cid@gmail.com>
-# Last modification: Nov 25, 2016
 
 # Changelog 19/03/2006 - Rafael M. Capovilla <under@underlinux.com.br>
 # New function AddWhite to allow users to add more Ips in the white_list
@@ -166,11 +166,6 @@ Install()
         UpdateStartOSSEC
     fi
 
-    # Enable auth if selected
-    if [ "X$INSTYPE" = "Xserver" ] && [ "X${AUTHD}" = "Xyes" ]; then
-        $INSTALLDIR/bin/ossec-control enable auth
-    fi
-
     # Calling the init script  to start ossec hids during boot
     runInit $INSTYPE ${update_only}
     if [ $? = 1 ]; then
@@ -287,7 +282,7 @@ EnableAuthd()
     # Authd config
     NB=$1
     echo ""
-    $ECHO "  $NB - ${runauthd} ($yes/$no) [$no]: "
+    $ECHO "  $NB - ${runauthd} ($yes/$no) [$yes]: "
     if [ "X${USER_ENABLE_AUTHD}" = "X" ]; then
         read AS
     else
@@ -295,13 +290,13 @@ EnableAuthd()
     fi
     echo ""
     case $AS in
-        $yesmatch)
-            AUTHD="yes"
-            echo "   - ${yesrunauthd}."
-            ;;
-        *)
+        $nomatch)
             AUTHD="no"
             echo "   - ${norunauthd}."
+            ;;
+        *)
+            AUTHD="yes"
+            echo "   - ${yesrunauthd}."
             ;;
     esac
 }

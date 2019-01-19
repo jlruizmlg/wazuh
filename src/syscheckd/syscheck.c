@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -18,6 +19,7 @@
 // Global variables
 syscheck_config syscheck;
 pthread_cond_t audit_thread_started;
+pthread_cond_t audit_hc_started;
 pthread_cond_t audit_db_consistency;
 int sys_debug_level;
 
@@ -73,6 +75,12 @@ static void read_internal(int debug_level)
     return;
 }
 
+void free_syscheck_node_data(syscheck_node *data) {
+    if (!data) return;
+    if (data->checksum) free(data->checksum);
+    free(data);
+}
+
 // Initialize syscheck variables
 int fim_initialize() {
     /* Create store data */
@@ -83,7 +91,11 @@ int fim_initialize() {
 #endif
     // Duplicate hash table to check for deleted files
     syscheck.last_check = OSHash_Create();
-
+    
+    if (!syscheck.fp || !syscheck.local_hash || !syscheck.last_check) merror_exit("At fim_initialize(): OSHash_Create() failed");
+    
+    OSHash_SetFreeDataPointer(syscheck.fp, (void (*)(void *))free_syscheck_node_data);
+    
     return 0;
 }
 
@@ -379,12 +391,12 @@ int main(int argc, char **argv)
 
     /* Connect to the queue */
     if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
-        merror(QUEUE_ERROR, DEFAULTQPATH, strerror(errno));
+        minfo("Cannot connect to queue '%s' (%d)'%s'. Waiting 5 seconds to reconnect.", DEFAULTQPATH, errno, strerror(errno));
 
         sleep(5);
         if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
             /* more 10 seconds of wait */
-            merror(QUEUE_ERROR, DEFAULTQPATH, strerror(errno));
+            minfo("Cannot connect to queue '%s' (%d)'%s'. Waiting 10 seconds to reconnect.", DEFAULTQPATH, errno, strerror(errno));
             sleep(10);
             if ((syscheck.queue = StartMQ(DEFAULTQPATH, WRITE)) < 0) {
                 merror_exit(QUEUE_FATAL, DEFAULTQPATH);

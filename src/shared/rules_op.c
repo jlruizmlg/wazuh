@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -344,6 +345,9 @@ int OS_ReadXMLRules(const char *rulefile,
                     config_ruleinfo->dstip = (os_ip **)
                                              realloc(config_ruleinfo->dstip,
                                                      (ip_s + 2) * sizeof(os_ip *));
+                    if(!config_ruleinfo->dstip) {
+                        merror_exit(MEM_ERROR, errno, strerror(errno));
+                    }
 
                     /* Allocate memory for the individual entries */
                     os_calloc(1, sizeof(os_ip),

@@ -1,6 +1,6 @@
 /*
  * Wazuh Module for file downloads
- * Copyright (C) 2018 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * April 25, 2018.
  *
  * This program is a free software; you can redistribute it
@@ -61,7 +61,7 @@ void * wm_download_main(wm_download_t * data) {
         static unsigned int seconds = 60;
 
         if (sock = OS_BindUnixDomain(WM_DOWNLOAD_SOCK_PATH, SOCK_STREAM, OS_MAXSTR), sock < 0) {
-            merror("Unable to bind to socket '%s', retrying in %u secs.", WM_DOWNLOAD_SOCK_PATH, seconds);
+            mwarn("Unable to bind to socket '%s', retrying in %u secs.", WM_DOWNLOAD_SOCK_PATH, seconds);
             sleep(seconds);
             seconds += seconds < 600 ? 60 : 0;
         }

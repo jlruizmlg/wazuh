@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -116,7 +117,9 @@ int OS_CleanMSG(char *msg, Eventinfo *lf)
                  (pieces[25] == ' ') && (lf->log += 26)) ||
 
                 ((pieces[19] == '.') &&
-                 (pieces[29] == ':') && (lf->log += 32))
+                 (pieces[29] == ':') && (lf->log += 33))  ||
+
+                ((pieces[19] == '.') && (lf->log += 32))
             )
         )
      ||

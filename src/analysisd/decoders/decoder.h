@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -70,10 +71,11 @@ int getDecoderfromlist(const char *name);
 char *GetGeoInfobyIP(char *ip_addr);
 int SetDecodeXML(void);
 void HostinfoInit(void);
-void fim_init(void);
+int fim_init(void);
 void RootcheckInit(void);
 void SyscollectorInit(void);
 void CiscatInit(void);
+void WinevtInit(void);
 int sc_send_db(char * msg,int *sock);
 
 int ReadDecodeXML(const char *file);

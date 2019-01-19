@@ -1,6 +1,6 @@
 /*
  * Wazuh Integration with Osquery
- * Copyright (C) 2018 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * April 5, 2018.
  *
  * This program is a free software; you can redistribute it
@@ -426,7 +426,7 @@ int wm_osquery_decorators(wm_osquery_monitor_t * osquery)
 
     // Load original osquery configuration
 
-    if (root = json_fread(osquery->config_path), !root) {
+    if (root = json_fread(osquery->config_path, 1), !root) {
         if (errno) {
             merror("Couldn't load configuration file '%s': %s (%d)", osquery->config_path, strerror(errno), errno);
         } else {
@@ -510,7 +510,7 @@ int wm_osquery_packs(wm_osquery_monitor_t *osquery)
 
     // Load original osquery configuration
 
-    if (root = json_fread(osquery->config_path), !root) {
+    if (root = json_fread(osquery->config_path, 1), !root) {
         if (errno) {
             merror("Couldn't load configuration file '%s': %s (%d)", osquery->config_path, strerror(errno), errno);
         } else {

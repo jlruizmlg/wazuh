@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -26,7 +27,8 @@ typedef struct _OSHash {
     unsigned int initial_seed;
     unsigned int constant;
     pthread_rwlock_t mutex;
-
+    
+    void (*free_data_function)(void *data);
     OSHashNode **table;
 } OSHash;
 
@@ -36,6 +38,7 @@ typedef struct _OSHash {
 OSHash *OSHash_Create(void);
 
 /* Free the memory used by the hash */
+int OSHash_SetFreeDataPointer(OSHash *self, void (free_data_function)(void *)) __attribute__((nonnull));
 void *OSHash_Free(OSHash *self) __attribute__((nonnull));
 
 /* Returns 0 on error
@@ -52,7 +55,7 @@ int OSHash_Update_ex(OSHash *hash, const char *key, void *data) __attribute__((n
 int OSHash_Set(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1, 2)));
 int OSHash_Set_ex(OSHash *hash, const char *key, void *data) __attribute__((nonnull(1, 2)));
 void *OSHash_Delete(OSHash *self, const char *key) __attribute__((nonnull));
-void *OSHash_Numeric_Delete_ex(OSHash *self, int key);
+void *OSHash_Numeric_Delete_ex(OSHash *self, int key) __attribute__((nonnull(1)));
 void *OSHash_Delete_ex(OSHash *self, const char *key) __attribute__((nonnull));
 void *OSHash_Delete_ins(OSHash *self, const char *key) __attribute__((nonnull));
 
@@ -68,7 +71,11 @@ void *OSHash_Get_ins(const OSHash *self, const char *key) __attribute__((nonnull
 int OSHash_setSize(OSHash *self, unsigned int new_size) __attribute__((nonnull));
 int OSHash_setSize_ex(OSHash *self, unsigned int new_size) __attribute__((nonnull));
 
-OSHash *OSHash_Duplicate(const OSHash *hash);
-OSHash *OSHash_Duplicate_ex(const OSHash *hash);
+OSHash *OSHash_Duplicate(const OSHash *hash) __attribute__((nonnull));
+OSHash *OSHash_Duplicate_ex(const OSHash *hash) __attribute__((nonnull));
+
+OSHashNode *OSHash_Begin(const OSHash *self, unsigned int *i);
+OSHashNode *OSHash_Next(const OSHash *self, unsigned int *i, OSHashNode *current);
+void *OSHash_Clean(OSHash *self, void (*cleaner)(void*));
 
 #endif

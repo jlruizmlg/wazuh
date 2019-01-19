@@ -1,6 +1,6 @@
 /*
  * URL download support library
- * Copyright (C) 2018 Wazuh Inc.
+ * Copyright (C) 2015-2019, Wazuh Inc.
  * October 26, 2018.
  *
  * This program is a free software; you can redistribute it
@@ -91,6 +91,7 @@ char *get_master_node(void) {
     if (OS_ReadXML(cfgfile, &xml) < 0) {
         mdebug1(XML_ERROR, cfgfile, xml.err, xml.err_line);
     } else {
+        os_free(master_node);
         master_node = OS_GetOneContentforElement(&xml, xmlf);
     }
 

@@ -1,4 +1,5 @@
-/* Copyright (C) 2009 Trend Micro Inc.
+/* Copyright (C) 2015-2019, Wazuh Inc.
+ * Copyright (C) 2009 Trend Micro Inc.
  * All rights reserved.
  *
  * This program is a free software; you can redistribute it
@@ -274,7 +275,13 @@ static int OS_Connect(u_int16_t _port, unsigned int protocol, const char *_ip, i
         server.sin_addr.s_addr = inet_addr(_ip);
 
         if (connect(ossock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+#ifdef WIN32
+            int error = WSAGetLastError();
+#endif
             OS_CloseSocket(ossock);
+#ifdef WIN32
+            WSASetLastError(error);
+#endif
             return (OS_SOCKTERR);
         }
     }
@@ -518,14 +525,24 @@ int OS_CloseSocket(int socket)
 
 int OS_SetRecvTimeout(int socket, long seconds, long useconds)
 {
+#ifdef WIN32
+    DWORD ms = seconds * 1000 + useconds / 1000;
+    return setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (const void *)&ms, sizeof(ms));
+#else
     struct timeval tv = { seconds, useconds };
     return setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (const void *)&tv, sizeof(tv));
+#endif
 }
 
 int OS_SetSendTimeout(int socket, int seconds)
 {
+#ifdef WIN32
+    DWORD ms = seconds * 1000;
+    return setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (const void *)&ms, sizeof(ms));
+#else
     struct timeval tv = { seconds, 0 };
     return setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (const void *)&tv, sizeof(tv));
+#endif
 }
 
 /* Send secure TCP message
@@ -555,7 +572,8 @@ int OS_RecvSecureTCP(int sock, char * ret,uint32_t size) {
     ssize_t recvval, recvb;
     uint32_t msgsize;
 
-    recvval = recv(sock, (char *) &msgsize, sizeof(msgsize), MSG_WAITALL);
+    /* Get header */
+    recvval = os_recv_waitall(sock, &msgsize, sizeof(msgsize));
 
     switch(recvval) {
         case -1:
@@ -570,10 +588,14 @@ int OS_RecvSecureTCP(int sock, char * ret,uint32_t size) {
     msgsize = wnet_order(msgsize);
 
     if(msgsize > size){
+        /* Error: the payload length is too long */
         return OS_SOCKTERR;
     }
 
-    recvb = recv(sock, ret, msgsize, MSG_WAITALL);
+    /* Get payload */
+    recvb = os_recv_waitall(sock, ret, msgsize);
+
+    /* Terminate string if there is space left */
 
     if (recvb == (int32_t) msgsize && msgsize < size) {
         ret[msgsize] = '\0';
@@ -629,7 +651,7 @@ ssize_t OS_RecvSecureTCP_Dynamic(int sock, char **ret) {
         recvval = strlen(data);
 
         if ((uint32_t)recvval < msgsize) {
-            recvmsg = recv(sock, *ret + recvval, msgsize - recvval, MSG_WAITALL);
+            recvmsg = os_recv_waitall(sock, *ret + recvval, msgsize - recvval);
 
             switch(recvmsg){
                 case -1:
@@ -666,7 +688,7 @@ ssize_t OS_RecvSecureTCP_Dynamic(int sock, char **ret) {
 // Byte ordering
 
 uint32_t wnet_order(uint32_t value) {
-#if (defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(OS_BIG_ENDIAN)
+#if defined(__sparc__) || defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(OS_BIG_ENDIAN)
     return (value >> 24) | (value << 24) | ((value & 0xFF0000) >> 8) | ((value & 0xFF00) << 8);
 #else
     return value;
@@ -675,7 +697,11 @@ uint32_t wnet_order(uint32_t value) {
 
 
 uint32_t wnet_order_big(uint32_t value) {
+#if defined(__sparc__) || defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(OS_BIG_ENDIAN)
+    return value;
+#else
     return (value >> 24) | (value << 24) | ((value & 0xFF0000) >> 8) | ((value & 0xFF00) << 8);
+#endif
 }
 
 /* Set the maximum buffer size for the socket */
@@ -728,7 +754,7 @@ int OS_SendSecureTCPCluster(int sock, const void * command, const void * payload
     const unsigned MAX_PAYLOAD_SIZE = 1000000;
     int retval;
     char * buffer = NULL;
-    uint32_t counter = os_random() % 4294967295;
+    uint32_t counter = (uint32_t)os_random();
     size_t cmd_length = 0;
     size_t buffer_size = 0;
 
@@ -776,7 +802,7 @@ int OS_RecvSecureClusterTCP(int sock, char * ret, size_t length) {
     uint32_t size = 0;
     char buffer[HEADER_SIZE];
 
-    recvval = recv(sock, buffer, HEADER_SIZE, MSG_WAITALL);
+    recvval = os_recv_waitall(sock, buffer, HEADER_SIZE);
 
     switch(recvval){
         case -1:
@@ -801,5 +827,25 @@ int OS_RecvSecureClusterTCP(int sock, char * ret, size_t length) {
     }
 
     /* Read the payload */
-    return recv(sock, ret, size, MSG_WAITALL);
+    return os_recv_waitall(sock, ret, size);
+}
+
+/* Receive a message from a stream socket, full message (MSG_WAITALL)
+ * Returns size on success.
+ * Returns -1 on socket error.
+ * Returns 0 on socket disconnected or timeout.
+ */
+ssize_t os_recv_waitall(int sock, void * buf, size_t size) {
+    size_t offset;
+    ssize_t recvb;
+
+    for (offset = 0; offset < size; offset += recvb) {
+        recvb = recv(sock, buf + offset, size - offset, 0);
+
+        if (recvb <= 0) {
+            return recvb;
+        }
+    }
+
+    return offset;
 }
