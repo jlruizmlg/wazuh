@@ -94,8 +94,8 @@ char* Eventinfo_to_jsonstr(const Eventinfo* lf)
         if(lf->generated_rule->info) {
             cJSON_AddStringToObject(rule, "info", lf->generated_rule->info);
         }
-        if(lf->generated_rule->frequency){
-            cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency);
+        if(lf->generated_rule->event_search){
+            cJSON_AddNumberToObject(rule, "frequency", lf->generated_rule->frequency + 2);
         }
         if(lf->r_firedtimes != -1 && !(lf->generated_rule->alert_opts & NO_COUNTER)) {
             cJSON_AddNumberToObject(rule, "firedtimes", lf->r_firedtimes);
@@ -163,6 +163,9 @@ char* Eventinfo_to_jsonstr(const Eventinfo* lf)
         cJSON_AddItemToObject(root, "syscheck", file_diff);
         cJSON_AddStringToObject(file_diff, "path", lf->filename);
 
+        if (lf->sym_path && *lf->sym_path) {
+            cJSON_AddStringToObject(file_diff, "symbolic_path", lf->sym_path);
+        }
         if(lf->size_before) {
             if (strcmp(lf->size_before, "") != 0) {
                 cJSON_AddStringToObject(file_diff, "size_before", lf->size_before);

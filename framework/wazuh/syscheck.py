@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 
 # Copyright (C) 2015-2019, Wazuh Inc.
 # Created by Wazuh, Inc. <info@wazuh.com>.
@@ -47,7 +47,7 @@ def run(agent_id=None, all_agents=False):
             agent_status = "N/A"
 
         if agent_status.lower() != 'active':
-            raise WazuhException(1602, '{0} - {1}'.format(agent_id, agent_status))
+            raise WazuhException(1604, '{0} - {1}'.format(agent_id, agent_status))
 
         oq = OssecQueue(common.ARQUEUE)
         ret_msg = oq.send_msg_to_agent(OssecQueue.HC_SK_RESTART, agent_id)
@@ -127,7 +127,7 @@ def files(agent_id=None, summary=False, offset=0, limit=common.database_limit, s
     :return: Dictionary: {'items': array of items, 'totalItems': Number of items (without applying the limit)}
     """
     parameters = {"date", "mtime", "file", "size", "perm", "uname", "gname", "md5", "sha1", "sha256", "inode", "gid",
-                  "uid", "type"}
+                  "uid", "type", "attributes", "symbolic_path"}
     summary_parameters = {"date", "mtime", "file"}
 
     if select is None:

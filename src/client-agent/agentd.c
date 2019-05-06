@@ -149,7 +149,7 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
     /* Connect to the execd queue */
     if (agt->execdq == 0) {
         if ((agt->execdq = StartMQ(EXECQUEUE, WRITE)) < 0) {
-            merror("Unable to connect to the active response "
+            minfo("Unable to connect to the active response "
                    "queue (disabled).");
             agt->execdq = -1;
         }
@@ -159,6 +159,12 @@ void AgentdStart(const char *dir, int uid, int gid, const char *user, const char
 
     os_delwait();
     update_status(GA_STATUS_ACTIVE);
+
+    // Ignore SIGPIPE signal to prevent the process from crashing
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &act, NULL);
 
     /* Send integrity message for agent configs */
     intcheck_file(OSSECCONF, dir);

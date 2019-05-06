@@ -227,7 +227,7 @@ int main(int argc, char **argv)
                 decodersfiles = Config.decoders;
                 while ( decodersfiles && *decodersfiles) {
                     if (!test_config) {
-                        minfo("Reading decoder file %s.", *decodersfiles);
+                        mdebug1("Reading decoder file %s.", *decodersfiles);
                     }
                     if (!ReadDecodeXML(*decodersfiles)) {
                         merror_exit(CONFIG_ERROR, *decodersfiles);
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 
                 /* Read local ones */
 
-                c = ReadDecodeXML("etc/local_decoder.xml");
+                c = ReadDecodeXML(XML_LDECODER);
                 if (!c) {
                     if ((c != -2)) {
                         merror_exit(CONFIG_ERROR,  XML_LDECODER);

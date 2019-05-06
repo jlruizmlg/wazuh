@@ -55,12 +55,20 @@ static int OS_Bindport(u_int16_t _port, unsigned int _proto, const char *_ip, in
 #endif
 
     if (_proto == IPPROTO_UDP) {
+#ifndef WIN32
         if ((ossock = socket(ipv6 == 1 ? PF_INET6 : PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#else
+        if ((ossock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#endif
             return OS_SOCKTERR;
         }
     } else if (_proto == IPPROTO_TCP) {
         int flag = 1;
+#ifndef WIN32
         if ((ossock = socket(ipv6 == 1 ? PF_INET6 : PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+#else
+        if ((ossock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+#endif
             return (int)(OS_SOCKTERR);
         }
 
@@ -240,11 +248,19 @@ static int OS_Connect(u_int16_t _port, unsigned int protocol, const char *_ip, i
 #endif
 
     if (protocol == IPPROTO_TCP) {
+#ifndef WIN32
         if ((ossock = socket(ipv6 == 1 ? PF_INET6 : PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+#else
+        if ((ossock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+#endif
             return (OS_SOCKTERR);
         }
     } else if (protocol == IPPROTO_UDP) {
+#ifndef WIN32
         if ((ossock = socket(ipv6 == 1 ? PF_INET6 : PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#else
+        if ((ossock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#endif
             return (OS_SOCKTERR);
         }
     } else {
@@ -523,6 +539,27 @@ int OS_CloseSocket(int socket)
 #endif /* WIN32 */
 }
 
+int OS_SetKeepalive(int socket)
+{
+    int keepalive = 1;
+    return setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&keepalive, sizeof(keepalive));
+}
+
+#ifndef CLIENT
+void OS_SetKeepalive_Options(int socket, int idle, int intvl, int cnt)
+{
+    if (setsockopt(socket, SOL_TCP, TCP_KEEPCNT, (void *)&cnt, sizeof(cnt)) < 0) {
+        merror("OS_SetKeepalive_Options(TCP_KEEPCNT) failed with error '%s'", strerror(errno));
+    }
+    if (setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&idle, sizeof(idle)) < 0) {
+        merror("OS_SetKeepalive_Options(SO_KEEPIDLE) failed with error '%s'", strerror(errno));
+    }
+    if (setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&intvl, sizeof(intvl)) < 0) {
+        merror("OS_SetKeepalive_Options(TCP_KEEPINTVL) failed with error '%s'", strerror(errno));
+    }
+}
+#endif
+
 int OS_SetRecvTimeout(int socket, long seconds, long useconds)
 {
 #ifdef WIN32
@@ -558,7 +595,6 @@ int OS_SendSecureTCP(int sock, uint32_t size, const void * msg) {
     *(uint32_t *)buffer = wnet_order(size);
     memcpy(buffer + sizeof(uint32_t), msg, size);
     retval = send(sock, buffer, bufsz, 0) == (ssize_t)bufsz ? 0 : OS_SOCKTERR;
-
     free(buffer);
     return retval;
 }
@@ -602,87 +638,6 @@ int OS_RecvSecureTCP(int sock, char * ret,uint32_t size) {
     }
 
     return recvb;
-}
-
-
-ssize_t OS_RecvSecureTCP_Dynamic(int sock, char **ret) {
-    ssize_t recvval, recvmsg = 0;
-    char *dyn_buffer;
-    const size_t bufsz = 512;
-    char static_buf[bufsz+1];
-    uint64_t msgsize;
-
-    recvval = recv(sock, static_buf, bufsz, 0);
-
-    switch(recvval){
-
-        case -1:
-            return -1;
-
-        case 0:
-            return 0;
-    }
-
-    static_buf[recvval] = '\0';
-
-    if (static_buf[0] == '!') {
-        char * c;
-        char * data;
-
-        if (c = strchr(static_buf, ' '), c) {
-            *c = '\0';
-            data = c + 1;
-
-            if (msgsize = strtoul(static_buf + 1, &c, 10), *c) {
-                merror("At OS_RecvSecureTCP(): invalid message size");
-                return -1;
-            }
-
-            if(msgsize > MAX_DYN_STR) {
-                return OS_MAXLEN;
-            }
-        } else {
-            merror("At OS_RecvSecureTCP(): invalid message received");
-            return -1;
-        }
-
-        os_malloc(msgsize + 1, *ret);
-        memcpy(*ret, data, msgsize);
-        recvval = strlen(data);
-
-        if ((uint32_t)recvval < msgsize) {
-            recvmsg = os_recv_waitall(sock, *ret + recvval, msgsize - recvval);
-
-            switch(recvmsg){
-                case -1:
-                case 0:
-                    free(*ret);
-                    return 0;
-            }
-        }
-        *(*ret + msgsize) = '\0';
-        return msgsize;
-    }
-    else {
-        os_malloc(OS_MAXSTR + 2, dyn_buffer);
-
-        recvmsg = recv(sock, dyn_buffer + 1, OS_MAXSTR, 0);
-
-        switch(recvmsg){
-            case -1:
-                free(dyn_buffer);
-                return -1;
-
-            case 0:
-                free(dyn_buffer);
-                return 0;
-        }
-
-        dyn_buffer[recvmsg + 1] = '\0';
-        *ret = dyn_buffer;
-
-        return recvmsg;
-    }
 }
 
 // Byte ordering
@@ -848,4 +803,15 @@ ssize_t os_recv_waitall(int sock, void * buf, size_t size) {
     }
 
     return offset;
+}
+
+// Wrapper for select()
+int wnet_select(int sock, int timeout) {
+    fd_set fdset;
+    struct timeval fdtimeout = { timeout, 0 };
+
+    FD_ZERO(&fdset);
+    FD_SET(sock, &fdset);
+
+    return select(sock + 1, &fdset, NULL, NULL, &fdtimeout);
 }

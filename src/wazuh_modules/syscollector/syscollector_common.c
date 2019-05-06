@@ -24,7 +24,7 @@ cJSON *wm_sys_dump(const wm_sys_t *sys);
 const wm_context WM_SYS_CONTEXT = {
     "syscollector",
     (wm_routine)wm_sys_main,
-    (wm_routine)wm_sys_destroy,
+    (wm_routine)(void *)wm_sys_destroy,
     (cJSON * (*)(const void *))wm_sys_dump
 };
 
@@ -68,14 +68,6 @@ void* wm_sys_main(wm_sys_t *sys) {
         // Wait for Wazuh DB start
         wm_delay(1000);
     }
-
-    #ifdef WIN32
-        if (!checkVista()){
-            mtwarn(WM_SYS_LOGTAG, "Network and opened ports scans are incompatible with versions older than Vista.");
-            sys->flags.netinfo = 0;
-            sys->flags.portsinfo = 0;
-        }
-    #endif
 
     // Main loop
 

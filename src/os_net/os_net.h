@@ -81,6 +81,17 @@ int OS_CloseSocket(int socket);
  */
 int OS_SetRecvTimeout(int socket, long seconds, long useconds);
 
+/*
+ * Enable SO_KEEPALIVE for TCP
+ */
+int OS_SetKeepalive(int socket);
+
+/*
+ * Enable SO_KEEPALIVE options for TCP
+ */
+#ifndef CLIENT
+void OS_SetKeepalive_Options(int socket, int idle, int intvl, int cnt);
+#endif
 /* Set the delivery timeout for a socket
  * Returns 0 on success, else -1
  */
@@ -109,11 +120,6 @@ int OS_SendSecureTCPCluster(int sock, const void * command, const void * payload
  */
 int OS_RecvSecureClusterTCP(int sock, char * ret, size_t length);
 
-
-// Receive dynamic size message. Use with OS_SendSecureTCP function.
-ssize_t OS_RecvSecureTCP_Dynamic(int sock, char **ret);
-
-
 // Byte ordering
 
 uint32_t wnet_order(uint32_t value);
@@ -127,5 +133,8 @@ int OS_SetSocketSize(int sock, int mode, int max_msg_size);
  * Returns 0 on socket disconnected or timeout.
  */
 ssize_t os_recv_waitall(int sock, void * buf, size_t size);
+
+// Wrapper for select()
+int wnet_select(int sock, int timeout);
 
 #endif /* __OS_NET_H */
