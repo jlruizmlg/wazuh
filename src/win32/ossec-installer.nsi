@@ -20,8 +20,8 @@
 ; general
 !define MUI_ICON install.ico
 !define MUI_UNICON uninstall.ico
-!define VERSION "3.10.1"
-!define REVISION "31012"
+!define VERSION "3.12.0"
+!define REVISION "31204"
 !define NAME "Wazuh"
 !define SERVICE "OssecSvc"
 
@@ -171,8 +171,10 @@ Section "Wazuh Agent (required)" MainSec
     CreateDirectory "$INSTDIR\active-response"
     CreateDirectory "$INSTDIR\active-response\bin"
     CreateDirectory "$INSTDIR\tmp"
-	CreateDirectory "$INSTDIR\queue"
-	CreateDirectory "$INSTDIR\queue\diff"
+    CreateDirectory "$INSTDIR\queue"
+    CreateDirectory "$INSTDIR\queue\diff"
+    CreateDirectory "$INSTDIR\queue\fim"
+    CreateDirectory "$INSTDIR\queue\fim\db"
     CreateDirectory "$INSTDIR\incoming"
     CreateDirectory "$INSTDIR\upgrade"
     CreateDirectory "$INSTDIR\wodles"

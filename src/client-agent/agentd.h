@@ -8,8 +8,8 @@
  * Foundation
  */
 
-#ifndef __AGENTD_H
-#define __AGENTD_H
+#ifndef AGENTD_H
+#define AGENTD_H
 
 #include "shared.h"
 #include "sec.h"
@@ -54,7 +54,7 @@ cJSON *getLabelsConfig(void);
 cJSON *getAgentInternalOptions(void);
 
 /* Agentd init function */
-void AgentdStart(const char *dir, int uid, int gid, const char *user, const char *group) __attribute__((noreturn));
+void AgentdStart(int uid, int gid, const char *user, const char *group) __attribute__((noreturn));
 
 /* Event Forwarder */
 void *EventForward(void);
@@ -64,9 +64,6 @@ int receive_msg(void);
 
 /* Receiver messages for Windows */
 void *receiver_thread(void *none);
-
-/* Send integrity checking information about a file to the server */
-int intcheck_file(const char *file_name, const char *dir);
 
 /* Initialize agent buffer */
 void buffer_init();
@@ -85,6 +82,9 @@ int send_msg(const char *msg, ssize_t msg_length);
 
 /* Extract the shared files */
 char *getsharedfiles(void);
+
+/* Get agent IP */
+char *get_agent_ip();
 
 /* Initialize handshake to server */
 void start_agent(int is_startup);
@@ -161,4 +161,4 @@ extern agent_state_t agent_state;
 
 static const char AG_IN_UNMERGE[] = "wazuh: Could not unmerge shared file.";
 
-#endif /* __AGENTD_H */
+#endif /* AGENTD_H */

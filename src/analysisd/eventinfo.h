@@ -8,8 +8,8 @@
  * Foundation
  */
 
-#ifndef _EVTINFO__H
-#define _EVTINFO__H
+#ifndef EVTINFO_H
+#define EVTINFO_H
 
 #include "rules.h"
 #include "decoders/decoder.h"
@@ -52,6 +52,7 @@ typedef struct _Eventinfo {
     char *command;
     char *url;
     char *data;
+    char *extra_data;
     char *systemname;
     DynamicField *fields;
     int nfields;
@@ -85,38 +86,27 @@ typedef struct _Eventinfo {
     /* SYSCHECK Results variables */
     syscheck_event_t event_type;
     char *filename;
+    char *hard_links;
     char *sk_tag;
     char *sym_path;
-    int perm_before;
-    int perm_after;
-    char *win_perm_before;
-    char *win_perm_after;
+    char *perm_before;
     char *md5_before;
-    char *md5_after;
     char *sha1_before;
-    char *sha1_after;
     char *sha256_before;
-    char *sha256_after;
     char *size_before;
-    char *size_after;
     char *owner_before;
-    char *owner_after;
     char *gowner_before;
-    char *gowner_after;
     char *uname_before;
-    char *uname_after;
     char *gname_before;
-    char *gname_after;
     long mtime_before;
     long mtime_after;
     long inode_before;
     long inode_after;
+    char *attributes_before;
     char *diff;
     char *previous;
     wlabel_t *labels;
-    unsigned int attrs_before;
-    unsigned int attrs_after;
-    // Whodata fields
+    // Whodata fields. They are duplicated by 'fields'
     char *user_id;
     char *user_name;
     char *group_id;
@@ -230,6 +220,7 @@ void *Action_FP(Eventinfo *lf, char *field, const char *order);
 void *ID_FP(Eventinfo *lf, char *field, const char *order);
 void *Url_FP(Eventinfo *lf, char *field, const char *order);
 void *Data_FP(Eventinfo *lf, char *field, const char *order);
+void *Extra_Data_FP(Eventinfo *lf, char *field, const char *order);
 void *Status_FP(Eventinfo *lf, char *field, const char *order);
 void *SystemName_FP(Eventinfo *lf, char *field, const char *order);
 void *DynamicField_FP(Eventinfo *lf, char *field, const char *order);
@@ -242,4 +233,4 @@ void w_copy_event_for_log(Eventinfo *lf,Eventinfo *lf_cpy);
 #define add_lastevt(x, y, z) os_realloc(x, sizeof(char *) * (y + 2), x); \
                              os_strdup(z, x[y]); \
                              x[y + 1] = NULL;
-#endif /* _EVTINFO__H */
+#endif /* EVTINFO_H */

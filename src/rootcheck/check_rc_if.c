@@ -9,6 +9,7 @@
  */
 
 #ifndef WIN32
+#include <shared.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -17,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #ifdef SOLARIS
 #include <stropts.h>
