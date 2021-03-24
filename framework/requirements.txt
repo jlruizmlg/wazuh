@@ -28,7 +28,7 @@ python-dateutil==2.8.0
 pytz==2018.9
 requests==2.21.0
 setuptools==40.6.2
-rsa==4.0
+rsa==4.1
 s3transfer==0.1.13
 six==1.12.0
 urllib3==1.24.3
