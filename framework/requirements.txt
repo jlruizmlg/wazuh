@@ -33,5 +33,5 @@ s3transfer==0.1.13
 six==1.12.0
 urllib3==1.24.3
 uvloop==0.11.3
-wheeL==0.33.1
+wheeL==0.38.1
 websocket-client==0.56.0
